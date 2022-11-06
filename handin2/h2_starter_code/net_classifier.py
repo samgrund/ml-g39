@@ -9,7 +9,10 @@ def one_in_k_encoding(vec, k):
     """
     n = vec.shape[0]
     enc = np.zeros((n, k))
+    # print(enc)
     enc[np.arange(n), vec] = 1
+    # print("aa: ",np.arange(n),vec)
+    # print(enc)
     return enc
 
 def softmax(X):
@@ -38,6 +41,9 @@ def softmax(X):
     """
     res = np.zeros(X.shape)
     ### YOUR CODE HERE
+    X = X - X.max()
+    res = np.exp(X) / np.sum(np.exp(X), axis=1, keepdims=True)
+
     ### END CODE
     return res
 
@@ -51,6 +57,7 @@ def relu(x):
         Beware of np.max and look at np.maximum
     """
     ### YOUR CODE HERE
+    res = np.maximum(x, 0)
     ### END CODE
     return res
 
@@ -96,6 +103,19 @@ class NetClassifier():
             params = self.params
         pred = None
         ### YOUR CODE HERE
+        W1 = params['W1']
+        b1 = params['b1']
+        W2 = params['W2']
+        b2 = params['b2']
+        z = np.dot(relu(np.dot(X,W1) + b1),W2) + b2
+
+        OUT = softmax(z)
+        pred = np.empty(OUT.shape[0])
+        i = 0
+        for out in OUT:
+            pred[i] = np.argmax(out)
+            i += 1
+        # print(pred)
         ### END CODE
         return pred
      
@@ -114,6 +134,9 @@ class NetClassifier():
             params = self.params
         acc = None
         ### YOUR CODE HERE
+        guess = self.predict(X, self.params)
+        correct = guess == y  # check data
+        acc = np.count_nonzero(correct) / X.shape[0]
         ### END CODE
         return acc
     
@@ -147,20 +170,44 @@ class NetClassifier():
         W2 = params['W2']
         b2 = params['b2']
         labels = one_in_k_encoding(y, W2.shape[1]) # shape n x k
-                        
+
         ### YOUR CODE HERE - FORWARD PASS - compute cost with weight decay and store relevant values for backprop
+        a0 = np.dot(X, W1) + b1
+        a1 = relu(a0)
+        a2 = np.dot(a1,W2) + b2
+        z = a2
+        OUT = softmax(z)
+        cost = - np.sum(labels * np.log(OUT)) / X.shape[0]
+        lambda_w = c * (np.sum(np.square(W1)) + np.sum(np.square(W2)))
+        Ein = cost + lambda_w ## Cost
+        # print("OUT: ",OUT)
         ### END CODE
         
         ### YOUR CODE HERE - BACKWARDS PASS - compute derivatives of all weights and bias, store them in d_w1, d_w2, d_b1, d_b2
+        def relu_prime(x):
+            x[x<=0] = 0
+            x[x>0] = 1
+            return x
+        delta2 = (OUT - labels) / X.shape[0]
+        # print("delta2: ",delta2)
+        d_w2 = np.dot(a1.T,delta2) + (c*2*W2)
+        d_b2 = np.sum(delta2,axis=0, keepdims=True)
+        delta1 = (np.dot(delta2,W2.T) * relu_prime(a0))
+
+        d_w1 = np.dot(X.T, delta1) + (c*2*W1)
+        d_b1 = np.sum(delta1,axis=0, keepdims=True)
+        # print(d_w1)
+
         ### END CODE
         # the return signature
-        return None, {'d_w1': None, 'd_w2': None, 'd_b1': None, 'd_b2': None}
+        return Ein, {'d_w1': d_w1, 'd_w2': d_w2, 'd_b1': d_b1, 'd_b2': d_b2}
         
     def fit(self, X_train, y_train, X_val, y_val, init_params, batch_size=32, lr=0.1, c=1e-4, epochs=30):
+        #batch_size = 32
         """ Run Mini-Batch Gradient Descent on data X, Y to minimize the in sample error for Neural Net classification
         Printing the performance every epoch is a good idea to see if the algorithm is working
     
-        Args:
+        Args:w
            X_train: numpy array shape (n, d) - the training data each row is a data point
            y_train: numpy array shape (n,) int - training target labels numbers in {0, 1,..., k-1}
            X_val: numpy array shape (n, d) - the validation data each row is a data point
@@ -177,25 +224,71 @@ class NetClassifier():
            hist: dict:{keys: train_loss, train_acc, val_loss, val_acc} each an np.array of size epochs of the the given cost after every epoch
            loss is the NLL loss and acc is accuracy
         """
-        
+        # print("AAAAAAAAAAAAAAAAAAAAAAAAAA")
         W1 = init_params['W1']
         b1 = init_params['b1']
         W2 = init_params['W2']
         b2 = init_params['b2']
         hist = {
-            'train_loss': None,
-            'train_acc': None,
-            'val_loss': None,
-            'val_acc': None, 
+            'train_loss': [],
+            'train_acc': [],
+            'val_loss': [],
+            'val_acc': [],
         }
 
-        
+        train_loss = np.zeros(epochs)
+        train_acc = np.zeros(epochs)
+        val_loss = np.zeros(epochs)
+        val_acc = np.zeros(epochs)
+
         ### YOUR CODE HERE
+
+        for i in range(0,epochs):
+            # print("ii")
+            sample_list = list(np.random.permutation(y_train.shape[0]))
+            X_train = X_train[sample_list]
+            y_train = y_train[sample_list]
+            epoch_loss = []
+            for start in range(0,y_train.shape[0],batch_size):
+                stop = start + batch_size
+                X_batch = X_train[start:stop]
+                Y_batch = y_train[start:stop]
+                cost_dic = self.cost_grad(X_batch, Y_batch, params={'W1': W1, 'b1': b1, 'W2': W2, 'b2': b2}, c = c)
+                W1 -= lr * cost_dic[1]["d_w1"]
+                W2 -= lr * cost_dic[1]["d_w2"]
+                b1 -= lr * cost_dic[1]["d_b1"]
+                b2 -= lr * cost_dic[1]["d_b2"]
+                epoch_loss.append(cost_dic[0])
+
+            ## self.params should look like this with something better than none, i.e. the best parameters found.
+            # self.params = {'W1': None, 'b1': None, 'W2': None, 'b2': None}
+            self.params = {'W1': W1, 'b1': b1, 'W2': W2, 'b2': b2}
+            val_grad = self.cost_grad(X_val, y_val, params=self.params, c = c)
+            cost_dic = self.cost_grad(X_train, y_train, params=self.params, c = c)
+
+            # hist dict should look like this with something different than none
+            train_loss = cost_dic[0]
+            print(cost_dic[0])
+            train_acc = self.score(X_train, y_train, params=self.params)
+            val_loss = val_grad[0]
+            val_acc = self.score(X_val, y_val, params=self.params)
+            # hist = {
+            #     'train_loss': cost_dic[0],
+            #     'train_acc': self.score(X_train, y_train, params=self.params),
+            #     'val_loss': val_grad,
+            #     'val_acc': self.score(X_val, y_val, params=self.params),
+            # }
+
+            hist['train_loss'].append(train_loss)
+            hist['train_acc'].append(train_acc)
+            hist['val_loss'].append(val_loss)
+            hist['val_acc'].append(val_acc)
+            # print("AAAAAAAAAAAAAAAA")
+            print("epoch: ", i, "train_loss: ", train_loss, "val_loss: ",val_loss, "val_acc: ", val_acc)
+
+
         ### END CODE
-        # hist dict should look like this with something different than none
-        #hist = {'train_loss': None, 'train_acc': None, 'val_loss': None, 'val_acc': None}
-        ## self.params should look like this with something better than none, i.e. the best parameters found.
-        # self.params = {'W1': None, 'b1': None, 'W2': None, 'b2': None}
+
         return hist
         
 
