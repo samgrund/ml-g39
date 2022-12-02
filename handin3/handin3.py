@@ -7,8 +7,6 @@ gen = []
 hidden = []
 if __name__ == "__main__":
 
-    # full_path = "D:/Aarhus/Courses/MachineLearning/Exercise/ML22/handins/handin3/"
-
     gen1 = FR.read_fasta_file('./data-handin3/genome1.fa')
     ann1 = FR.read_fasta_file('./data-handin3/true-ann1.fa')
 
