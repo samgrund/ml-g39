@@ -1,0 +1,7 @@
+;Example FASTA file
+    >genomeA
+    CGATTAAAGA
+    TAGAAATACA
+    >annotationA
+    CCCCCCNNNN
+    NNNNRRRRRR
