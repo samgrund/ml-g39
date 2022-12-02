@@ -66,7 +66,7 @@ def Init(gen,pred,ann):
     # print(ann[0][364])
     ###################### Initial Pi #################################
     pi = Create_Pi(ann)
-    # print(pi)
+    print(pi)
 
     ###################### Initial A ##################################
     # Transition
