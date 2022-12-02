@@ -66,14 +66,16 @@ def Init(gen,pred,ann):
     # print(ann[0][364])
     ###################### Initial Pi #################################
     pi = Create_Pi(ann)
-    print(pi)
+    # print(pi)
 
     ###################### Initial A ##################################
     # Transition
     A = Create_Transition(ann)
-    print(A)
+    # print(A)
 
     ###################### Initial B ##################################
     # Emission
     B = Create_Emission(gen,ann)
-    print(B)
+    # print(B)
+
+    return pi, A, B

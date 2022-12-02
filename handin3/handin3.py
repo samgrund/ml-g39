@@ -32,6 +32,7 @@ if __name__ == "__main__":
     pred = [gen6['genome6'], gen7['genome7'], gen8['genome8'], gen9['genome9'], gen10['genome10']]
     ann = [ann1['true-ann1'], ann2['true-ann2'], ann3['true-ann3'], ann4['true-ann4'], ann5['true-ann5']]
 
-    HMM.Init(gen,pred,ann)
+    pi, A, B = HMM.Init(gen,pred,ann)
+
 
 
