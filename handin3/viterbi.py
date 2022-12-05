@@ -1,9 +1,10 @@
 import numpy as np
 
 
-def viterbi(obs: np.ndarray, pi: np.ndarray, T: np.ndarray, E: np.ndarray) -> np.ndarray:
+def log_viterbi(obs: np.ndarray, pi: np.ndarray, T: np.ndarray, E: np.ndarray) -> np.ndarray:
     """Viterbi algorithm for finding the most probable state sequence
     given an observation sequence and HMM model parameters.
+    Uses log transformation.
 
     Args:
         obs: Observation sequence [np.ndarray(int,float) of shape (N,)]
@@ -15,6 +16,8 @@ def viterbi(obs: np.ndarray, pi: np.ndarray, T: np.ndarray, E: np.ndarray) -> np
         list of most probable state sequence [np.ndarray(int) of shape (N,)]
     """
     # Check observation sequence format
+    assert isinstance(
+        obs, np.ndarray), "Observation sequence must be a numpy array"
     assert ((obs.dtype == float) or (obs.dtype == int)
             ), "Observation sequence must be a numpy array of floats or ints"
 
@@ -31,15 +34,18 @@ def viterbi(obs: np.ndarray, pi: np.ndarray, T: np.ndarray, E: np.ndarray) -> np
 
     # Forward pass
     omega = np.zeros((K, N))
-    omega[:, 0] = pi * E[:, obs[0]]
+    omega[:, 0] = np.log(pi) + np.log(E[:, obs[0]])
+    # Forward pass
     for n in range(1, N):
-        omega[:, n] = np.max(omega[:, n-1] * T,
-                             axis=0) * E[:, obs[n]]
+        for j in range(K):
+            omega[j, n] = np.log(E[j, obs[n]]) + \
+                np.max(omega[:, n-1] + np.log(T[j, :]))
 
     # Backward pass
-    states = np.zeros(N, dtype=int)
-    states[-1] = np.argmax(omega[:, -1])
+    z = np.zeros(N, dtype=int)
+    z[N-1] = np.argmax(omega[:, -1])
     for n in range(N-2, -1, -1):
-        states[n] = np.argmax(omega[:, n] * T[:, states[n+1]])
+        z[n] = np.argmax(np.log(E[z[n+1], obs[n+1]]) +
+                         omega[:, n] + np.log(T[:, z[n+1]]))
 
-    return states
+    return z
