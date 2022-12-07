@@ -2,8 +2,7 @@ import sys
 import numpy as np
 import FileReader as FR
 import HMM
-import EM
-import utility
+import Viterbi as vtb
 
 gen = []
 hidden = []
@@ -33,16 +32,27 @@ if __name__ == "__main__":
 
     pi, A, B = HMM.Init(gen,pred,ann)
 
-    # print("Pi: ",pi)
-    # for i in pi:
-    #     print(i)
-    # print("A: ",A)
+    # print(len(gen[9]))
+    gen_new = []
+    for j in range(len(gen[0])): # Take the first file
+        if gen[0][j] == 'A':
+            gen_new.append(0)
+        elif gen[0][j] == 'T':
+            gen_new.append(1)
+        elif gen[0][j] == 'C':
+            gen_new.append(2)
+        elif gen[0][j] == 'G':
+            gen_new.append(3)
 
-    # print("B: ",B)
+    gen_new = np.array(gen_new)
+    pi = [0] * 8 + [1] + [0] * 6
+    pi = np.array(pi)
+    A = np.array(A)
+    B = np.array(B)
+    # print(gen_new)
 
-
-
-    # print(A,B,pi)
-    # A, B = EM.em_learning(gen[0], pi, A, B, n_iter=100)
+    print(pi)
+    z = vtb.log_viterbi(gen_new,pi,A,B.transpose())
+    print(z)
 
 

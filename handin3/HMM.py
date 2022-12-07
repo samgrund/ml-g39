@@ -1,5 +1,6 @@
 import sys
 import numpy as np
+from sklearn.preprocessing import normalize
 
 
 def Create_Pi(ann):
@@ -110,6 +111,34 @@ def New_Emiss(trans, emit):
 
     return new_trans,new_emit
 
+def Normalize(pi, new_A_large, new_B_large):
+    """
+    new_A_new = []
+    new_B_new = []
+    for i in range(0,15):
+        print(np.linalg.norm(new_A_large))
+        new_A_new.append(np.linalg.norm(new_A_large[i]))
+    for i in range(0,4):
+        new_B_new.append(np.linalg.norm(new_B_large[i]))
+    """
+
+    for i in range(0,15):
+        sum = 0
+        for j in range(0,15):
+            sum += new_A_large[i][j]
+        for j in range(0,15):
+            new_A_large[i][j] /= sum
+
+    for i in range(0,15):
+        sum = 0
+        for j in range(0,4):
+            sum += new_B_large[j][i]
+        print(sum)
+        for j in range(0,4):
+            new_B_large[j][i] /= sum
+
+    return pi, new_A_large, new_B_large
+
 def Init(gen,pred,ann):
     # print(ann[0][364])
     ###################### Initial Pi #################################
@@ -127,8 +156,10 @@ def Init(gen,pred,ann):
 
     new_A = New_Trans(A) # 7*7
     new_A_large,new_B_large = New_Emiss(A,B.transpose())
-    print("7*7 transmission: ",new_A)
-    print("15*15 transmission: ",new_A_large)
-    print("15*15 emission: ",new_B_large)
+    pi, new_A_large, new_B_large = Normalize(pi, new_A_large, new_B_large)
+    # print("pi: ", pi)
+    # print("7*7 transmission: ", new_A)
+    # print("15*15 transmission: ", new_A_large)
+    # print("15*15 emission: ", new_B_large)
     # print(pi)
-    return pi, new_A, new_B_large
+    return pi, new_A_large, new_B_large
